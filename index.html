@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>twitch-dashboard</title>
+
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="https://d3js.org/d3-scale.v3.min.js"></script>
+    <script src="https://d3js.org/d3-axis.v2.min.js"></script>
+
+    <style>
+        #app-root {
+            display: flex;
+            flex-wrap: wrap;
+            margin-top: -1em;
+            margin-left: -1em;
+        }
+
+        #app-root > * {
+            margin-top: 1em;
+            margin-left: 1em;
+        }
+
+        .chart {
+            /* display: block; */
+            border: 1px solid #000;
+        }
+
+        .bar {
+            background-color: silver;
+            /* position: absolute;
+            bottom: 0; */
+            /* width: 5px;
+            height: 5px;
+            border-radius: 100%;
+            background-color: black; */
+        }
+    </style>
+</head>
+<body>
+    <div id="app-root"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
