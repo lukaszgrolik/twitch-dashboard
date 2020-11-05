@@ -1,3 +1,9 @@
+// @todo day & hour lines - 6, 12, 18
+// @todo show timezone hours onhover - americas, east-south asia, east asia, australia/new zealand
+// @todo select categories to show/hide; option - refresh data domain (adjust y axis)
+// @todo highlight category line on hover
+// @todo crosshair with (date, viewers) info
+
 async function fetchData(opts) {
     const {from, to, interval, filter} = opts;
     const res = await fetch(`http://localhost:3002/stats`, {
@@ -20,7 +26,7 @@ async function fetchData(opts) {
 // @todo line
 // @todo chart - show/hide individual categories
 // @todo date format https://bl.ocks.org/d3noob/ccdcb7673cdb3a796e13
-function drawChart(data, catNames, opts = {}, i = 0) {
+function drawChart(config, data, catNames, opts = {}, i = 0) {
     // const data = generateData(dataset.domain, 50, dataset.fn);
     const defaultGetDate = date => new Date(date);
     const getDate = opts.getDate || defaultGetDate;
@@ -47,22 +53,44 @@ function drawChart(data, catNames, opts = {}, i = 0) {
         return Math.max(max, ...catMeans);
     }, -1);
 
-    const containerWidth = 1500;
+    const containerWidth = 1400;
     const containerHeight = 500;
 
     const svgID = `chart_${i}`;
     // console.log(svgID, dataset.label, data);
     const datasetHtml = `<div>
-    <p>twitch chart #${i}</p>
-    <svg id="${svgID}" width="${containerWidth}" height="${containerHeight}" class="chart"></svg>
+    <p>${config.label}</p>
 
-    <ul>
-        ${
-            catNames.map(catName => {
-                return `<li><div style="display: inline-block; width: 1em; height: 1em; background-color: ${colors[catName]};"></div>${catName}</li>`
-            }).join('')
-        }
-    </ul>
+    <!--<table>
+        <tr>
+            <th>from</th>
+            <th>to</th>
+            <th>interval</th>
+            <th>filter</th>
+        </tr>
+
+        <tr>
+            <td>${config.dataConfig.from}</td>
+            <td>${config.dataConfig.to}</td>
+            <td>${config.dataConfig.interval}</td>
+            <td style="background: lightgrey; font-family: monospace">${JSON.stringify(config.dataConfig.filter)}</td>
+        </tr>
+    </table>-->
+
+    <div style="display: flex">
+        <pre style="background-color: lightgrey;">${JSON.stringify(config.dataConfig, null, 2)}</pre>
+
+        <ul>
+            ${
+                catNames.map(catName => {
+                    return `<li><div style="display: inline-block; width: 1em; height: 1em; background-color: ${colors[catName]};"></div>${catName}</li>`
+                }).join('')
+            }
+        </ul>
+
+        <svg id="${svgID}" width="${containerWidth}" height="${containerHeight}" class="chart"></svg>
+    </div>
+
 </div>`;
 
     document.getElementById('app-root').innerHTML += datasetHtml;
@@ -125,104 +153,130 @@ function drawChart(data, catNames, opts = {}, i = 0) {
             return yScale(d.stats[catName].mean);
         };
 
-        const catGroup = container
-            .append('g');
-        const dots = catGroup
-            .selectAll('.dot')
-            .data(dataArr)
-            .enter()
-            .append('circle')
-            .classed('dot', true)
-            .attr('r', 1)
-            .attr('cx', xAttr)
-            .attr('cy', yAttr)
-            // .style('left', (x, i) => i * barWidth + 'px')
-            // .attr('fill', (x, i) => i % 2 ? 'silver' : 'grey')
-            .attr('fill', (x, i) => colors[catName])
-        // .text(x => x)
+        // const catGroup = container
+        //     .append('g');
+        // const dots = catGroup
+        //     .selectAll('.dot')
+        //     .data(dataArr)
+        //     .enter()
+        //     .append('circle')
+        //     .classed('dot', true)
+        //     .attr('r', 1)
+        //     .attr('cx', xAttr)
+        //     .attr('cy', yAttr)
+        //     // .style('left', (x, i) => i * barWidth + 'px')
+        //     // .attr('fill', (x, i) => i % 2 ? 'silver' : 'grey')
+        //     .attr('fill', (x, i) => colors[catName])
+        // // .text(x => x)
+
+        container.append("path")
+            .datum(dataArr)
+            .attr("fill", "none")
+            .attr("stroke", colors[catName])
+            .attr("stroke-width", 1.5)
+            .attr("d", d3.line()
+                .x(xAttr)
+                .y(yAttr)
+            );
     }
 }
 
 (async () => {
-    const data1 = await fetchData({
-        from: '2020-10-17',
-        to: '2020-11-01',
-        interval: 'day',
-        filter: 'diablo',
-    });
-    const data2 = await fetchData({
-        // from: '2020-10-30',
-        from: '2020-10-17',
-        to: '2020-11-01',
-        interval: 'hour',
-        filter: 'diablo',
-    });
-    // recently popular
-    const data3 = await fetchData({
-        // from: '2020-10-30',
-        from: '2020-10-17',
-        to: '2020-11-01',
-        interval: 'hour',
-        filter: ['just chatting', 'fall guys', 'among us', 'phasmophobia', 'grand theft auto', 'dead by daylight', 'torchlight', 'Genshin Impact', 'animal crossing', 'World of Warcraft'],
-    });
-    // // non-games
-    // const data4 = await fetchData({
-    //     // from: '2020-10-30',
-    //     from: '2020-10-17',
-    //     to: '2020-11-01',
-    //     interval: 'hour',
-    //     filter: [{exact: 'just chatting'}, {exact: 'music'}, {exact: 'art'}, {exact: 'sports'}, {exact: 'Talk Shows & Podcasts'}, {exact: 'Food & Drink'}, {exact: 'Science & Technology'}],
-    // });
-    // // arpg
-    // const data5 = await fetchData({
-    //     // from: '2020-10-30',
-    //     from: '2020-10-17',
-    //     to: '2020-11-01',
-    //     interval: 'hour',
-    //     filter: ['diablo', 'Path of Exile', 'wolcen', 'torchlight', 'grim dawn'],
-    // });
-    // // top "> 20k" 2020-11-02 18:16
-    // const data6 = await fetchData({
-    //     filter: [
-    //         {exact: 'Just Chatting'},
-    //         {exact: 'Counter-Strike: Global Offensive'},
-    //         {exact: 'League of Legends'},
-    //         {exact: 'Fortnite'},
-    //         {exact: 'Call Of Duty: Modern Warfare'},
-    //         {exact: 'Among Us'},
-    //         {exact: 'Minecraft'},
-    //         {exact: 'Grand Theft Auto V'},
-    //         {exact: 'Dota 2'},
-    //         {exact: 'World of Warcraft'},
-    //         {exact: 'VALORANT'},
-    //         {exact: 'FIFA 21'},
-    //         {exact: 'Escape From Tarkov'},
-    //         {exact: 'Hearthstone'},
-    //         {exact: 'Apex Legends'},
-    //         {exact: 'Old School RuneScape'},
-    //         {exact: 'Teamfight Tactics'},
-    //         {exact: 'Dead by Daylight'},
-    //         {exact: 'Tom Clancy\'s Rainbow Six: Siege'},
-    //         {exact: 'Phasmophobia'},
-    //         {exact: 'Genshin Impact'},
-    //         {exact: 'PLAYERUNKNOWN\'S BATTLEGROUNDS'},
-    //         {exact: 'Watch Dogs: Legion'},
-    //         {exact: 'Rocket League'},
-    //         {exact: 'Overwatch'},
-    //     ]
-    // })
+    const config = [
+        {
+            label: 'diablo I-III per day',
+            dataConfig: {
+                from: '2020-10-17',
+                to: '2020-11-01',
+                interval: 'day',
+                filter: 'diablo',
+            },
+        },
+        {
+            label: 'diablo I-III per hour',
+            dataConfig: {
+                // from: '2020-10-30',
+                from: '2020-10-17',
+                to: '2020-11-01',
+                interval: 'hour',
+                filter: 'diablo',
+            },
+        },
+        {
+            label: 'recently popular',
+            dataConfig: {
+                // from: '2020-10-30',
+                from: '2020-10-17',
+                to: '2020-11-01',
+                interval: 'hour',
+                filter: ['just chatting', 'fall guys', 'among us', 'phasmophobia', 'grand theft auto', 'dead by daylight', 'torchlight', 'Genshin Impact', 'animal crossing', 'World of Warcraft'],
+            },
+        },
+        {
+            label: 'non-games',
+            dataConfig: {
+                // from: '2020-10-30',
+                from: '2020-10-17',
+                to: '2020-11-05',
+                interval: 'hour',
+                filter: [{exact: 'just chatting'}, {exact: 'music'}, {exact: 'art'}, {exact: 'sports'}, {exact: 'Talk Shows & Podcasts'}, {exact: 'Food & Drink'}, {exact: 'Science & Technology'}],
+            },
+        },
+        {
+            label: 'arpg',
+            dataConfig: {
+                // from: '2020-10-30',
+                from: '2020-10-17',
+                to: '2020-11-05',
+                interval: 'hour',
+                filter: ['diablo', 'Path of Exile', 'wolcen', 'torchlight', 'grim dawn'],
+            },
+        },
+        {
+            label: 'top "> 20k" 2020-11-02 18:16',
+            dataConfig: {
+                from: '2020-10-17',
+                to: '2020-11-05',
+                interval: 'hour',
+                filter: [
+                    {exact: 'Just Chatting'},
+                    {exact: 'Counter-Strike: Global Offensive'},
+                    {exact: 'League of Legends'},
+                    {exact: 'Fortnite'},
+                    {exact: 'Call Of Duty: Modern Warfare'},
+                    {exact: 'Among Us'},
+                    {exact: 'Minecraft'},
+                    {exact: 'Grand Theft Auto V'},
+                    {exact: 'Dota 2'},
+                    {exact: 'World of Warcraft'},
+                    {exact: 'VALORANT'},
+                    {exact: 'FIFA 21'},
+                    {exact: 'Escape From Tarkov'},
+                    {exact: 'Hearthstone'},
+                    {exact: 'Apex Legends'},
+                    {exact: 'Old School RuneScape'},
+                    {exact: 'Teamfight Tactics'},
+                    {exact: 'Dead by Daylight'},
+                    {exact: 'Tom Clancy\'s Rainbow Six: Siege'},
+                    {exact: 'Phasmophobia'},
+                    {exact: 'Genshin Impact'},
+                    {exact: 'PLAYERUNKNOWN\'S BATTLEGROUNDS'},
+                    {exact: 'Watch Dogs: Legion'},
+                    {exact: 'Rocket League'},
+                    {exact: 'Overwatch'},
+                ]
+            },
+        },
+    ];
 
-    // const colors = {
-    //     'Diablo': 'red',
-    //     'Diablo II': 'grey',
-    //     'Diablo III': 'violet',
-    // };
+    const getDateWithHours = date => new Date(date + ':00');
 
-    drawChart(data1.data, Object.keys(data1.ticks), {}, 0);
-    drawChart(data2.data, Object.keys(data2.ticks), {
-        getDate: date => new Date(date + ':00'),
-    }, 1);
-    drawChart(data3.data, Object.keys(data3.ticks), {
-        getDate: date => new Date(date + ':00'),
-    }, 2);
+    for (const item of config) {
+        const data = await fetchData(item.dataConfig);
+
+        drawChart(item, data.data, Object.keys(data.ticks), {
+            ...(item.dataConfig.interval === 'hour' && {getDate: getDateWithHours}),
+        }, config.indexOf(item));
+    }
+
 })();
